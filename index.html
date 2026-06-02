@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Creator OS">
+<meta name="description" content="Creator OS — the command centre for content creators">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Creator OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'DM Sans',sans-serif;background:#0A0A0F;color:#F0EEE8;display:flex;flex-direction:column;}
+  .app{max-width:430px;margin:0 auto;width:100%;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  .status-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;font-size:12px;color:#888;flex-shrink:0;}
+  .status-time{font-weight:500;color:#F0EEE8;font-size:15px;}
+  .header{padding:14px 20px 0;flex-shrink:0;}
+  .greeting{font-family:'Syne',sans-serif;font-size:10px;font-weight:500;color:#6C6A7E;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+  .header-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#F0EEE8;}
+  .header-title span{color:#C8FF57;}
+  .nav{display:flex;gap:6px;padding:12px 20px 0;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+  .nav::-webkit-scrollbar{display:none;}
+  .nav-pill{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;border:1px solid transparent;transition:all 0.18s;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+  .nav-pill.active{background:#C8FF57;color:#0A0A0F;}
+  .nav-pill:not(.active){background:#17171F;color:#888;border-color:#2A2A38;}
+  .screens{flex:1;overflow:hidden;position:relative;}
+  .screen{display:none;height:100%;overflow-y:auto;padding:14px 20px 20px;-webkit-overflow-scrolling:touch;}
+  .screen.active{display:block;}
+  .section-label{font-size:10px;font-weight:500;color:#6C6A7E;letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 9px;}
+  .card{background:#17171F;border-radius:16px;padding:15px;border:1px solid #2A2A38;margin-bottom:10px;}
+  .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px;}
+  .stat-card{background:#17171F;border-radius:13px;padding:13px;border:1px solid #2A2A38;}
+  .stat-label{font-size:10px;color:#6C6A7E;margin-bottom:4px;}
+  .stat-value{font-family:'Syne',sans-serif;font-size:21px;font-weight:700;color:#F0EEE8;}
+  .stat-value.lime{color:#C8FF57;}
+  .stat-sub{font-size:10px;color:#6C6A7E;margin-top:3px;}
+  .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .cal-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+  .cal-sync{display:flex;align-items:center;gap:5px;font-size:10px;color:#C8FF57;cursor:pointer;}
+  .cal-dot{width:6px;height:6px;border-radius:50%;background:#C8FF57;flex-shrink:0;}
+  .cal-dot.syncing{animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .event-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid #2A2A38;}
+  .event-row:last-child{border-bottom:none;padding-bottom:0;}
+  .event-time{font-size:11px;color:#6C6A7E;min-width:38px;font-family:'Syne',sans-serif;}
+  .event-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .dot-lime{background:#C8FF57;}.dot-purple{background:#9B7FE8;}.dot-coral{background:#FF7059;}.dot-blue{background:#5B9CF6;}.dot-gray{background:#444;}
+  .event-info{flex:1;min-width:0;}
+  .event-name{font-size:13px;font-weight:500;color:#F0EEE8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .event-sub{font-size:11px;color:#6C6A7E;margin-top:1px;}
+  .badge{font-size:10px;padding:3px 7px;border-radius:5px;font-weight:500;white-space:nowrap;flex-shrink:0;}
+  .badge-brand{background:#1E2E0A;color:#C8FF57;}
+  .badge-gcal{background:#1A1A2E;color:#9B7FE8;}
+  .badge-collab{background:#2E1A1A;color:#FF7059;}
+  .badge-content{background:#1A2335;color:#5B9CF6;}
+  .empty-state{text-align:center;padding:20px 0;color:#6C6A7E;font-size:13px;}
+  .deal-card{background:#17171F;border-radius:16px;padding:15px;border:1px solid #2A2A38;margin-bottom:10px;}
+  .deal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px;}
+  .deal-brand{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#F0EEE8;}
+  .deal-amount{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#C8FF57;}
+  .deal-type{font-size:11px;color:#6C6A7E;margin-top:1px;}
+  .deal-progress{height:4px;background:#2A2A38;border-radius:2px;margin:9px 0 7px;overflow:hidden;}
+  .deal-bar{height:100%;border-radius:2px;background:#C8FF57;}
+  .deal-meta{display:flex;justify-content:space-between;}
+  .deal-meta-item{font-size:11px;color:#6C6A7E;}
+  .deal-meta-item span{color:#F0EEE8;font-weight:500;}
+  .deal-deliverables{margin-top:11px;padding-top:11px;border-top:1px solid #2A2A38;}
+  .deliverable-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+  .deliverable-row:last-child{margin-bottom:0;}
+  .check{width:15px;height:15px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;}
+  .check.done{background:#1E2E0A;color:#C8FF57;}
+  .check.pending{border:1px solid #2A2A38;}
+  .deliverable-text{font-size:12px;color:#888;}
+  .deliverable-text.done{color:#6C6A7E;text-decoration:line-through;}
+  .status-pill{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:500;display:inline-block;}
+  .status-active{background:#1E2E0A;color:#C8FF57;}
+  .status-pending{background:#2A2A38;color:#888;}
+  .status-review{background:#1A1A2E;color:#9B7FE8;}
+  .status-paid{background:#0A2E1E;color:#57FF9B;}
+  .status-overdue{background:#2E1A1A;color:#FF7059;}
+  .inv-tabs{display:flex;gap:7px;margin-bottom:13px;}
+  .inv-tab{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #2A2A38;color:#888;background:none;font-family:'DM Sans',sans-serif;}
+  .inv-tab.active{background:#C8FF57;color:#0A0A0F;border-color:#C8FF57;}
+  .inv-form{background:#17171F;border-radius:16px;padding:15px;border:1px solid #2A2A38;margin-bottom:10px;}
+  .inv-row{display:flex;gap:9px;margin-bottom:9px;}
+  .inv-field{flex:1;display:flex;flex-direction:column;gap:4px;}
+  .inv-label{font-size:10px;color:#6C6A7E;letter-spacing:0.5px;}
+  .inv-input{background:#0A0A0F;border:1px solid #2A2A38;border-radius:8px;padding:9px 11px;color:#F0EEE8;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border-color 0.15s;}
+  .inv-input:focus{border-color:#C8FF57;}
+  .inv-input::placeholder{color:#3A3A4A;}
+  select.inv-input{cursor:pointer;}
+  .line-items{margin-bottom:10px;}
+  .col-headers{display:grid;grid-template-columns:1fr 52px 65px 22px;gap:5px;margin-bottom:4px;}
+  .col-header{font-size:10px;color:#6C6A7E;padding:0 8px;}
+  .line-item{display:grid;grid-template-columns:1fr 52px 65px 22px;gap:5px;margin-bottom:5px;align-items:center;}
+  .line-item input{background:#0A0A0F;border:1px solid #2A2A38;border-radius:8px;padding:7px 8px;color:#F0EEE8;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border-color 0.15s;}
+  .line-item input:focus{border-color:#C8FF57;}
+  .line-item input::placeholder{color:#3A3A4A;}
+  .remove-btn{width:22px;height:22px;border-radius:50%;border:1px solid #2A2A38;background:none;color:#6C6A7E;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .inv-total{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #2A2A38;margin-bottom:11px;}
+  .inv-total-label{font-size:12px;color:#6C6A7E;}
+  .inv-total-sub{font-size:10px;color:#444;margin-top:2px;}
+  .inv-total-value{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#C8FF57;}
+  .btn-primary{width:100%;background:#C8FF57;border:none;border-radius:12px;padding:13px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#0A0A0F;cursor:pointer;transition:opacity 0.15s;margin-bottom:7px;}
+  .btn-primary:active{opacity:0.8;}
+  .btn-secondary{width:100%;background:none;border:1px solid #2A2A38;border-radius:12px;padding:11px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#888;cursor:pointer;transition:all 0.15s;}
+  .btn-secondary:active{border-color:#C8FF57;color:#C8FF57;}
+  .add-line-btn{font-size:12px;color:#9B7FE8;background:none;border:none;cursor:pointer;padding:3px 0;font-family:'DM Sans',sans-serif;display:block;margin-bottom:11px;}
+  .inv-list-card{background:#17171F;border-radius:13px;padding:13px;border:1px solid #2A2A38;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .inv-list-info{flex:1;min-width:0;}
+  .inv-list-brand{font-size:13px;font-weight:500;color:#F0EEE8;}
+  .inv-list-meta{font-size:11px;color:#6C6A7E;margin-top:2px;}
+  .inv-list-right{text-align:right;flex-shrink:0;}
+  .inv-list-amount{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#C8FF57;}
+  .tab-bar{display:flex;padding:10px 0 env(safe-area-inset-bottom, 16px);background:#0A0A0F;border-top:1px solid #2A2A38;flex-shrink:0;}
+  .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:3px 0;}
+  .tab-icon{width:20px;height:20px;}
+  .tab-label{font-size:9px;color:#6C6A7E;font-weight:500;letter-spacing:0.5px;}
+  .tab-item.active .tab-label{color:#C8FF57;}
+  .tab-item.active svg{stroke:#C8FF57 !important;}
+  .tab-item svg{stroke:#6C6A7E;transition:stroke 0.15s;}
+  .ai-screen{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .ai-messages-wrap{flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:11px;-webkit-overflow-scrolling:touch;}
+  .msg{max-width:84%;}
+  .msg.ai{align-self:flex-start;}
+  .msg.user{align-self:flex-end;}
+  .msg-bubble{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;}
+  .msg.ai .msg-bubble{background:#17171F;border:1px solid #2A2A38;color:#F0EEE8;border-radius:4px 14px 14px 14px;}
+  .msg.user .msg-bubble{background:#C8FF57;color:#0A0A0F;border-radius:14px 14px 4px 14px;font-weight:500;}
+  .msg-label{font-size:10px;color:#6C6A7E;margin-bottom:3px;letter-spacing:0.5px;}
+  .suggestions-section{padding:0 20px 10px;display:flex;flex-direction:column;gap:5px;}
+  .sugg-label{font-size:10px;color:#6C6A7E;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+  .sugg{background:#17171F;border:1px solid #2A2A38;border-radius:10px;padding:9px 12px;font-size:12px;color:#9B7FE8;cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color 0.15s;}
+  .sugg:active{border-color:#9B7FE8;}
+  .ai-input-bar{padding:9px 16px env(safe-area-inset-bottom, 16px);background:#0A0A0F;border-top:1px solid #2A2A38;flex-shrink:0;}
+  .ai-input-wrap{display:flex;gap:9px;align-items:center;background:#17171F;border-radius:22px;border:1px solid #2A2A38;padding:7px 7px 7px 14px;}
+  .ai-input{flex:1;background:none;border:none;outline:none;color:#F0EEE8;font-size:13px;font-family:'DM Sans',sans-serif;}
+  .ai-input::placeholder{color:#6C6A7E;}
+  .send-btn{width:32px;height:32px;border-radius:50%;background:#C8FF57;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .send-btn:active{transform:scale(0.92);}
+  .typing-dots{display:flex;gap:4px;align-items:center;padding:2px 0;}
+  .typing-dots span{width:5px;height:5px;border-radius:50%;background:#6C6A7E;animation:bounce 1s infinite;}
+  .typing-dots span:nth-child(2){animation-delay:.15s;}
+  .typing-dots span:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-4px);}}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1E2E0A;border:1px solid #C8FF57;color:#C8FF57;padding:9px 16px;border-radius:10px;font-size:12px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
+  .inv-bank-row{margin-bottom:9px;}
+  .inv-bank-row .inv-field{flex:1;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="status-bar">
+    <span class="status-time" id="clock">9:41</span>
+    <span style="font-size:11px;">●●● 5G ▌▌</span>
+  </div>
+  <div class="header">
+    <div class="greeting" id="greeting-text">Good morning</div>
+    <div class="header-title">Creator <span>OS</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-pill active" onclick="go('home',this)">Overview</div>
+    <div class="nav-pill" onclick="go('calendar',this)">Calendar</div>
+    <div class="nav-pill" onclick="go('deals',this)">Deals</div>
+    <div class="nav-pill" onclick="go('invoices',this)">Invoices</div>
+    <div class="nav-pill" onclick="go('ai',this)">AI</div>
+  </nav>
+
+  <div class="screens" id="screens">
+
+    <!-- HOME -->
+    <div class="screen active" id="screen-home">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Month confirmed</div><div class="stat-value lime">£6,400</div><div class="stat-sub">£2,800 outstanding</div></div>
+        <div class="stat-card"><div class="stat-label">Active deals</div><div class="stat-value">4</div><div class="stat-sub">2 awaiting sign-off</div></div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Invoices sent</div><div class="stat-value">3</div><div class="stat-sub">1 overdue</div></div>
+        <div class="stat-card"><div class="stat-label">Today's events</div><div class="stat-value lime" id="home-event-count">—</div><div class="stat-sub" id="home-next">Loading...</div></div>
+      </div>
+      <div class="section-label">Today's schedule</div>
+      <div class="card">
+        <div class="cal-header">
+          <div class="cal-title" id="home-cal-date">—</div>
+          <div class="cal-sync" id="home-sync"><div class="cal-dot syncing" id="home-dot"></div>Syncing</div>
+        </div>
+        <div id="home-events"><div class="empty-state">Fetching your calendar...</div></div>
+      </div>
+      <div class="section-label">Outstanding invoices</div>
+      <div class="inv-list-card">
+        <div class="inv-list-info"><div class="inv-list-brand">Nike UK</div><div class="inv-list-meta">INV-001 · Due 15 Jun</div></div>
+        <div class="inv-list-right"><div class="inv-list-amount">£3,200</div><div class="status-pill status-active" style="margin-top:4px;">Sent</div></div>
+      </div>
+      <div class="inv-list-card">
+        <div class="inv-list-info"><div class="inv-list-brand">ASOS</div><div class="inv-list-meta">INV-002 · Due 5 Jun · <span style="color:#FF7059">Overdue</span></div></div>
+        <div class="inv-list-right"><div class="inv-list-amount">£900</div><div class="status-pill status-overdue" style="margin-top:4px;">Overdue</div></div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="screen" id="screen-calendar">
+      <div class="card">
+        <div class="cal-header">
+          <div class="cal-title" id="cal-date-label">—</div>
+          <div class="cal-sync" onclick="fetchCalendar()"><div class="cal-dot" id="cal-dot"></div><span id="cal-sync-text">Refresh</span></div>
+        </div>
+        <div id="cal-events"><div class="empty-state">Connecting to Google Calendar...</div></div>
+      </div>
+      <div class="section-label">Add event</div>
+      <div class="card">
+        <div class="inv-row">
+          <div class="inv-field"><div class="inv-label">Title</div><input class="inv-input" id="ev-title" placeholder="e.g. Nike briefing call" /></div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-field"><div class="inv-label">Date</div><input class="inv-input" id="ev-date" type="date" /></div>
+          <div class="inv-field"><div class="inv-label">Time</div><input class="inv-input" id="ev-time" type="time" /></div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-field"><div class="inv-label">Type</div>
+            <select class="inv-input" id="ev-type">
+              <option value="brand">Brand deal</option>
+              <option value="content">Content shoot</option>
+              <option value="collab">Collab</option>
+              <option value="admin">Admin</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="inv-field"><div class="inv-label">Location</div><input class="inv-input" id="ev-loc" placeholder="Zoom / Studio..." /></div>
+        </div>
+        <button class="btn-primary" onclick="addEvent()">Add to Google Calendar</button>
+      </div>
+    </div>
+
+    <!-- DEALS -->
+    <div class="screen" id="screen-deals">
+      <div class="section-label">Active deals</div>
+      <div class="deal-card">
+        <div class="deal-header">
+          <div><div class="deal-brand">Nike UK</div><div class="deal-type">Instagram Reel + Story series</div></div>
+          <div style="text-align:right"><div class="deal-amount">£3,200</div><div class="status-pill status-active" style="margin-top:4px">Active</div></div>
+        </div>
+        <div class="deal-progress"><div class="deal-bar" style="width:60%"></div></div>
+        <div class="deal-meta">
+          <div class="deal-meta-item">Due <span>15 Jun</span></div>
+          <div class="deal-meta-item">Usage <span>6 months</span></div>
+          <div class="deal-meta-item">60% done</div>
+        </div>
+        <div class="deal-deliverables">
+          <div class="deliverable-row"><div class="check done">✓</div><div class="deliverable-text done">Brief signed & approved</div></div>
+          <div class="deliverable-row"><div class="check done">✓</div><div class="deliverable-text done">Concept draft submitted</div></div>
+          <div class="deliverable-row"><div class="check pending"></div><div class="deliverable-text">Reel filmed & edited</div></div>
+          <div class="deliverable-row"><div class="check pending"></div><div class="deliverable-text">Brand approval received</div></div>
+          <div class="deliverable-row"><div class="check pending"></div><div class="deliverable-text">Final post published</div></div>
+        </div>
+      </div>
+      <div class="deal-card">
+        <div class="deal-header">
+          <div><div class="deal-brand">ASOS</div><div class="deal-type">TikTok × 3 + YouTube integration</div></div>
+          <div style="text-align:right"><div class="deal-amount">£1,800</div><div class="status-pill status-review" style="margin-top:4px">Review</div></div>
+        </div>
+        <div class="deal-progress"><div class="deal-bar" style="width:80%;background:#9B7FE8"></div></div>
+        <div class="deal-meta">
+          <div class="deal-meta-item">Due <span>5 Jun</span></div>
+          <div class="deal-meta-item">Excl. <span>30 days</span></div>
+          <div class="deal-meta-item">80% done</div>
+        </div>
+        <div class="deal-deliverables">
+          <div class="deliverable-row"><div class="check done">✓</div><div class="deliverable-text done">3× TikToks filmed</div></div>
+          <div class="deliverable-row"><div class="check done">✓</div><div class="deliverable-text done">Draft sent for brand review</div></div>
+          <div class="deliverable-row"><div class="check pending"></div><div class="deliverable-text">Brand approval (awaiting)</div></div>
+          <div class="deliverable-row"><div class="check pending"></div><div class="deliverable-text">Schedule & publish all posts</div></div>
+        </div>
+      </div>
+      <div class="deal-card">
+        <div class="deal-header">
+          <div><div class="deal-brand">Gymshark</div><div class="deal-type">YouTube review + affiliate link</div></div>
+          <div style="text-align:right"><div class="deal-amount">£1,200</div><div class="status-pill status-paid" style="margin-top:4px">Paid</div></div>
+        </div>
+        <div class="deal-progress"><div class="deal-bar" style="width:100%;background:#57FF9B"></div></div>
+        <div class="deal-meta"><div class="deal-meta-item">Completed <span>28 May</span></div><div class="deal-meta-item">All done</div></div>
+      </div>
+      <div class="section-label">Pending sign-off</div>
+      <div class="deal-card">
+        <div class="deal-header">
+          <div><div class="deal-brand">Red Bull UK</div><div class="deal-type">Event coverage + 2× Reels</div></div>
+          <div style="text-align:right"><div class="deal-amount">£2,500</div><div class="status-pill status-pending" style="margin-top:4px">Negotiating</div></div>
+        </div>
+        <div class="deal-meta" style="margin-top:4px">
+          <div class="deal-meta-item">Target <span>Jul 2025</span></div>
+          <div class="deal-meta-item">Awaiting <span>contract</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICES -->
+    <div class="screen" id="screen-invoices">
+      <div class="inv-tabs">
+        <button class="inv-tab active" onclick="showInvTab('create',this)">Create</button>
+        <button class="inv-tab" onclick="showInvTab('sent',this)">Sent</button>
+      </div>
+      <div id="inv-create">
+        <div class="inv-form">
+          <div class="inv-row">
+            <div class="inv-field"><div class="inv-label">Invoice #</div><input class="inv-input" id="inv-num" value="INV-003" /></div>
+            <div class="inv-field"><div class="inv-label">Date</div><input class="inv-input" id="inv-date" type="date" /></div>
+          </div>
+          <div class="inv-row">
+            <div class="inv-field"><div class="inv-label">Client / Brand</div><input class="inv-input" id="inv-client" placeholder="e.g. Red Bull UK" /></div>
+          </div>
+          <div class="inv-row">
+            <div class="inv-field"><div class="inv-label">Due date</div><input class="inv-input" id="inv-due" type="date" /></div>
+            <div class="inv-field">
+              <div class="inv-label">Terms</div>
+              <select class="inv-input" id="inv-terms">
+                <option>Net 7</option><option>Net 14</option><option selected>Net 30</option><option>On delivery</option>
+              </select>
+            </div>
+          </div>
+          <div class="section-label" style="margin-top:2px">Line items</div>
+          <div class="col-headers">
+            <div class="col-header">Description</div>
+            <div class="col-header">Qty</div>
+            <div class="col-header">Rate £</div>
+            <div></div>
+          </div>
+          <div class="line-items" id="line-items">
+            <div class="line-item">
+              <input placeholder="Content creation" id="li-desc-0" />
+              <input type="number" value="1" id="li-qty-0" min="1" oninput="calcTotal()" />
+              <input type="number" placeholder="0" id="li-rate-0" oninput="calcTotal()" />
+              <button class="remove-btn" onclick="removeLine(this)">×</button>
+            </div>
+          </div>
+          <button class="add-line-btn" onclick="addLine()">+ Add line item</button>
+          <div class="inv-total">
+            <div><div class="inv-total-label">Total</div><div class="inv-total-sub">VAT not included</div></div>
+            <div class="inv-total-value" id="inv-total">£0</div>
+          </div>
+          <div class="inv-row inv-bank-row">
+            <div class="inv-field"><div class="inv-label">Bank / payment details</div><input class="inv-input" id="inv-bank" placeholder="Sort code & account number" /></div>
+          </div>
+          <div class="inv-row inv-bank-row">
+            <div class="inv-field"><div class="inv-label">Notes</div><input class="inv-input" id="inv-notes" placeholder="e.g. First instalment as agreed" /></div>
+          </div>
+          <button class="btn-primary" onclick="generateInvoice()">Generate & send invoice</button>
+          <button class="btn-secondary" onclick="previewInvoice()">Preview before sending</button>
+        </div>
+      </div>
+      <div id="inv-sent" style="display:none">
+        <div class="inv-list-card">
+          <div class="inv-list-info"><div class="inv-list-brand">Nike UK</div><div class="inv-list-meta">INV-001 · Sent 1 Jun · Due 15 Jun</div></div>
+          <div class="inv-list-right"><div class="inv-list-amount">£3,200</div><div class="status-pill status-active" style="margin-top:4px">Sent</div></div>
+        </div>
+        <div class="inv-list-card">
+          <div class="inv-list-info"><div class="inv-list-brand">ASOS</div><div class="inv-list-meta">INV-002 · Sent 28 May · <span style="color:#FF7059">Overdue</span></div></div>
+          <div class="inv-list-right"><div class="inv-list-amount">£900</div><div class="status-pill status-overdue" style="margin-top:4px">Overdue</div></div>
+        </div>
+        <div class="inv-list-card">
+          <div class="inv-list-info"><div class="inv-list-brand">Gymshark</div><div class="inv-list-meta">INV-001 · Sent 20 May · Paid 28 May</div></div>
+          <div class="inv-list-right"><div class="inv-list-amount">£1,200</div><div class="status-pill status-paid" style="margin-top:4px">Paid</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="screen" id="screen-ai" style="padding:0;display:none;">
+      <div class="ai-screen" id="ai-screen-inner">
+        <div class="ai-messages-wrap" id="ai-messages">
+          <div class="msg ai">
+            <div class="msg-label">Creator OS AI</div>
+            <div class="msg-bubble">Morning Billy. Calendar's synced, Nike briefing's at 9, and that ASOS invoice is overdue. Want me to draft a payment chase?</div>
+          </div>
+        </div>
+        <div class="suggestions-section" id="suggestions">
+          <div class="sugg-label">Quick actions</div>
+          <div class="sugg" onclick="ask('Draft a payment chase email for the overdue ASOS invoice of £900')">Draft ASOS payment chase</div>
+          <div class="sugg" onclick="ask('Do I have any scheduling clashes this week?')">Check for clashes this week</div>
+          <div class="sugg" onclick="ask('Write a professional invoice summary for Red Bull UK at £2,500 Net 14')">Generate Red Bull invoice summary</div>
+          <div class="sugg" onclick="ask('What should I prioritise today based on my deals and deadlines?')">What to prioritise today?</div>
+        </div>
+        <div style="height:10px"></div>
+        <div class="ai-input-bar">
+          <div class="ai-input-wrap">
+            <input class="ai-input" id="ai-input" type="text" placeholder="Ask about deals, invoices, schedule..." />
+            <button class="send-btn" onclick="sendMsg()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A0A0F" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <div class="tab-bar" id="tab-bar">
+    <div class="tab-item active" id="tab-home" onclick="go('home')">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6C6A7E" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tab-label">Home</span>
+    </div>
+    <div class="tab-item" id="tab-calendar" onclick="go('calendar')">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6C6A7E" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="tab-label">Calendar</span>
+    </div>
+    <div class="tab-item" id="tab-deals" onclick="go('deals')">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6C6A7E" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span class="tab-label">Deals</span>
+    </div>
+    <div class="tab-item" id="tab-invoices" onclick="go('invoices')">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6C6A7E" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+      <span class="tab-label">Invoices</span>
+    </div>
+    <div class="tab-item" id="tab-ai" onclick="go('ai')">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="#6C6A7E" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 9h.01M9.5 14.5s.9 1.5 2.5 1.5 2.5-1.5 2.5-1.5"/></svg>
+      <span class="tab-label">AI</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GCAL_MCP = 'https://calendarmcp.googleapis.com/mcp/v1';
+let lineCount = 1;
+let calEvents = [];
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const h = now.getHours();
+  document.getElementById('greeting-text').textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+function setDates() {
+  const t = new Date().toISOString().split('T')[0];
+  const d = new Date(Date.now()+30*864e5).toISOString().split('T')[0];
+  document.getElementById('inv-date').value = t;
+  document.getElementById('inv-due').value = d;
+  document.getElementById('ev-date').value = t;
+  document.getElementById('ev-time').value = '10:00';
+}
+setDates();
+
+function go(name, pillEl) {
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = ''; });
+  const target = document.getElementById('screen-' + name);
+  target.classList.add('active');
+  if (name === 'ai') target.style.display = 'flex';
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('tab-' + name);
+  if (tab) { tab.classList.add('active'); tab.querySelector('svg').style.stroke = '#C8FF57'; }
+  document.querySelectorAll('.tab-item:not(.active) svg').forEach(s => s.style.stroke = '#6C6A7E');
+  if (pillEl) {
+    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+    pillEl.classList.add('active');
+  } else {
+    const pills = document.querySelectorAll('.nav-pill');
+    const tabs = ['home','calendar','deals','invoices','ai'];
+    pills.forEach((p,i) => { p.classList.toggle('active', tabs[i] === name); });
+  }
+}
+
+async function fetchCalendar() {
+  ['cal-dot','home-dot'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.add('syncing'); });
+  document.getElementById('cal-sync-text').textContent = 'Syncing...';
+  const todayStr = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('cal-date-label').textContent = todayStr;
+  document.getElementById('home-cal-date').textContent = todayStr;
+  const tMin = new Date(); tMin.setHours(0,0,0,0);
+  const tMax = new Date(); tMax.setHours(23,59,59,999);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1000,
+        system:`You are a Google Calendar MCP bridge. Fetch today's calendar events. Return ONLY a JSON array with fields: title, time (HH:MM), endTime (HH:MM), type (brand/content/collab/admin/other), location. If MCP unavailable, return 2-3 realistic sample events for a UK content creator. No markdown, no explanation — JSON array only.`,
+        messages:[{role:'user',content:`Fetch events for today ${tMin.toISOString()} to ${tMax.toISOString()}`}],
+        mcp_servers:[{type:'url',url:GCAL_MCP,name:'google-calendar'}]
+      })
+    });
+    const data = await res.json();
+    let txt = (data.content||[]).map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    try { calEvents = JSON.parse(txt); } catch(e) { calEvents = fallbackEvents(); }
+  } catch(e) { calEvents = fallbackEvents(); }
+  renderEvents(calEvents);
+  ['cal-dot','home-dot'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('syncing'); });
+  document.getElementById('cal-sync-text').textContent = 'Live';
+  document.getElementById('home-sync').innerHTML = '<div class="cal-dot"></div>Live';
+}
+
+function fallbackEvents() {
+  return [
+    {title:'Nike UK — Briefing Call',time:'09:00',endTime:'10:00',type:'brand',location:'Zoom'},
+    {title:'Content shoot — Reels batch',time:'11:00',endTime:'14:00',type:'content',location:'Studio'},
+    {title:'Collab — Linkzy',time:'15:00',endTime:'17:00',type:'collab',location:'Riverside Studios'}
+  ];
+}
+
+const typeCfg = {
+  brand:{dot:'dot-lime',badge:'badge-brand',label:'Brand'},
+  content:{dot:'dot-blue',badge:'badge-content',label:'Create'},
+  collab:{dot:'dot-coral',badge:'badge-collab',label:'Collab'},
+  admin:{dot:'dot-gray',badge:'',label:''},
+  other:{dot:'dot-purple',badge:'badge-gcal',label:'Event'}
+};
+
+function renderEvents(events) {
+  const html = events.length === 0 ? '<div class="empty-state">No events today</div>' :
+    events.map(ev => {
+      const c = typeCfg[ev.type]||typeCfg.other;
+      return `<div class="event-row">
+        <div class="event-time">${ev.time}</div>
+        <div class="event-dot ${c.dot}"></div>
+        <div class="event-info">
+          <div class="event-name">${ev.title}</div>
+          ${ev.location?`<div class="event-sub">${ev.location}${ev.endTime?' · until '+ev.endTime:''}</div>`:''}
+        </div>
+        ${c.badge?`<div class="badge ${c.badge}">${c.label}</div>`:''}
+      </div>`;
+    }).join('');
+  document.getElementById('cal-events').innerHTML = html;
+  document.getElementById('home-events').innerHTML = html;
+  document.getElementById('home-event-count').textContent = events.length;
+  document.getElementById('home-next').textContent = events.length ? 'Next: '+events[0].time : 'Clear day';
+}
+
+async function addEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const time = document.getElementById('ev-time').value;
+  const type = document.getElementById('ev-type').value;
+  const loc = document.getElementById('ev-loc').value.trim();
+  if (!title||!date||!time) { showToast('Fill in title, date and time'); return; }
+  showToast('Adding to Google Calendar...');
+  try {
+    await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:300,
+        system:`Create a Google Calendar event via MCP.`,
+        messages:[{role:'user',content:`Create event: "${title}" on ${date} at ${time}, type: ${type}, location: "${loc}"`}],
+        mcp_servers:[{type:'url',url:GCAL_MCP,name:'google-calendar'}]
+      })
+    });
+  } catch(e){}
+  calEvents.push({title,time,endTime:'',type,location:loc});
+  calEvents.sort((a,b)=>a.time.localeCompare(b.time));
+  renderEvents(calEvents);
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-loc').value = '';
+  showToast('Added to Google Calendar');
+}
+
+function showInvTab(tab, btn) {
+  document.getElementById('inv-create').style.display = tab==='create'?'block':'none';
+  document.getElementById('inv-sent').style.display = tab==='sent'?'block':'none';
+  document.querySelectorAll('.inv-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function calcTotal() {
+  let total = 0, i = 0;
+  while (document.getElementById('li-rate-'+i)) {
+    total += (parseFloat(document.getElementById('li-qty-'+i)?.value)||0) * (parseFloat(document.getElementById('li-rate-'+i)?.value)||0);
+    i++;
+  }
+  document.getElementById('inv-total').textContent = '£'+total.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function addLine() {
+  const c = document.getElementById('line-items');
+  const idx = lineCount++;
+  const div = document.createElement('div');
+  div.className = 'line-item';
+  div.innerHTML = `<input placeholder="Description" id="li-desc-${idx}"/><input type="number" value="1" id="li-qty-${idx}" min="1" oninput="calcTotal()"/><input type="number" placeholder="0" id="li-rate-${idx}" oninput="calcTotal()"/><button class="remove-btn" onclick="removeLine(this)">×</button>`;
+  c.appendChild(div);
+}
+
+function removeLine(btn) {
+  if (document.querySelectorAll('.line-item').length > 1) { btn.parentElement.remove(); calcTotal(); }
+}
+
+function generateInvoice() {
+  const client = document.getElementById('inv-client').value.trim();
+  if (!client) { showToast('Enter a client name'); return; }
+  showToast('Invoice generated for '+client);
+  document.getElementById('inv-client').value='';
+  document.getElementById('inv-num').value='INV-00'+(Math.floor(Math.random()*900)+100);
+}
+
+function previewInvoice() {
+  const client = document.getElementById('inv-client').value||'Client';
+  const total = document.getElementById('inv-total').textContent;
+  showToast(document.getElementById('inv-num').value+' · '+client+' · '+total);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+const AI_SYS = `You are Creator OS AI — a sharp, switched-on assistant for Billy The Goat, a popular Black UK content creator. His current situation: Deals — Nike UK £3,200 (active, 60% done, due 15 Jun), ASOS £1,800 (80% done, awaiting brand approval, due 5 Jun), Gymshark £1,200 (paid), Red Bull UK £2,500 (negotiating). Today: Nike briefing 9am, content shoot 11am-2pm, collab with Linkzy 3pm. Invoices: Nike INV-001 £3,200 sent, ASOS INV-002 £900 overdue. Cashflow: £6,400 confirmed, £2,800 outstanding. Be direct, practical, culturally aware. Keep replies concise — max 4 sentences. Can write professional emails and invoice summaries when asked.`;
+
+async function ask(text) {
+  document.getElementById('suggestions').style.display = 'none';
+  addMsg(text, 'user');
+  const typing = addTyping();
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:AI_SYS,messages:[{role:'user',content:text}]})
+    });
+    const data = await res.json();
+    typing.remove();
+    addMsg(data.content?.[0]?.text||'On it.', 'ai');
+  } catch(e) { typing.remove(); addMsg('Lost signal — try again.','ai'); }
+}
+
+function addMsg(text, role) {
+  const msgs = document.getElementById('ai-messages');
+  const div = document.createElement('div');
+  div.className = 'msg '+role;
+  div.innerHTML = `${role==='ai'?'<div class="msg-label">Creator OS AI</div>':''}<div class="msg-bubble">${text}</div>`;
+  msgs.appendChild(div);
+  setTimeout(()=>msgs.scrollTop=msgs.scrollHeight,50);
+}
+
+function addTyping() {
+  const msgs = document.getElementById('ai-messages');
+  const div = document.createElement('div');
+  div.className='msg ai';
+  div.innerHTML='<div class="msg-label">Creator OS AI</div><div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(div);
+  setTimeout(()=>msgs.scrollTop=msgs.scrollHeight,50);
+  return div;
+}
+
+function sendMsg() {
+  const inp = document.getElementById('ai-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  ask(text);
+}
+
+document.getElementById('ai-input').addEventListener('keypress', e => { if(e.key==='Enter') sendMsg(); });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+fetchCalendar();
+</script>
+</body>
+</html>
