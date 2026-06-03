@@ -476,8 +476,8 @@ async function fetchCalendar() {
   const tMin = new Date(); tMin.setHours(0,0,0,0);
   const tMax = new Date(); tMax.setHours(23,59,59,999);
   try {
-    const res = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01'},
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514', max_tokens:1000,
         system:`You are a Google Calendar MCP bridge. Fetch today's calendar events. Return ONLY a JSON array with fields: title, time (HH:MM), endTime (HH:MM), type (brand/content/collab/admin/other), location. If MCP unavailable, return 2-3 realistic sample events for a UK content creator. No markdown, no explanation — JSON array only.`,
@@ -540,8 +540,8 @@ async function addEvent() {
   if (!title||!date||!time) { showToast('Fill in title, date and time'); return; }
   showToast('Adding to Google Calendar...');
   try {
-    await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01'},
       body: JSON.stringify({
         model:'claude-sonnet-4-20250514', max_tokens:300,
         system:`Create a Google Calendar event via MCP.`,
@@ -614,8 +614,8 @@ async function ask(text) {
   addMsg(text, 'user');
   const typing = addTyping();
   try {
-    const res = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01'},
       body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:AI_SYS,messages:[{role:'user',content:text}]})
     });
     const data = await res.json();
@@ -661,4 +661,3 @@ fetchCalendar();
 </script>
 </body>
 </html>
-
